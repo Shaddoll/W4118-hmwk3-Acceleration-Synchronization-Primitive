@@ -36,6 +36,10 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device);
 void daemon_mode(void)
 {
 	/* Fill in */
+	int ret = daemon(0, 0);
+	if (ret < 0) {
+		exit(errno);
+	}
 	return;
 }
 
@@ -67,6 +71,7 @@ int main(int argc, char **argv)
 emulation:
 		poll_sensor_data(sensors_device);
 		/* TODO: Define time interval and call usleep */
+		usleep((useconds_t) 1000 * TIME_INTERVAL);
 	}
 
 	return EXIT_SUCCESS;
@@ -77,6 +82,7 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 {
 	struct dev_acceleration *cur_acceleration;
 	int err = 0; /* Return value of this function*/
+	int i;
 
 	if (effective_linaccel_sensor < 0) {
 		/* emulation */
@@ -85,6 +91,10 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - 
 		 * scale it and send it to your kernel
 		 */
+		err = syscall(__NR_set_acceleration, cur_acceleration);
+		if (err < 0) {
+			goto error;
+		}
 	} else {
 
 
@@ -97,8 +107,22 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - scale it and
 		 * send it to kernel
 		 */
+		cur_acceleration = (struct dev_acceleration *)
+			malloc(sizeof(struct dev_acceleration));
+		for (i = 0; i < count; ++i) {
+			if (buffer[i].sensor == effective_sensor) {
+				cur_acceleration->x = (int)(buffer[i].acceleration.x * 100);
+				cur_acceleration->y = (int)(buffer[i].acceleration.y * 100);
+				cur_acceleration->z = (int)(buffer[i].acceleration.z * 100);
+				err = syscall(__NR_set_acceleration, cur_acceleration);
+				if (err < 0) {
+					goto error;
+				}
+			}
 		}
 	}
+error:
+	free(cur_acceleration);
 	return err;
 }
 

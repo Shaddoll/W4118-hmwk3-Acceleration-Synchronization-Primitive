@@ -10,7 +10,6 @@ static struct dev_acceleration acc;	/* used by set_acceleration syscall */
 static DEFINE SPINLOCK(acclist_lock);
 static LIST_HEAD(acc_list);
 
-static DEFINE_SPINLOCK(motion_event_lock);
 static int number_of_events;
 struct motion_events event_list;
 static DEFINE_SPINLOCK(event_list_lock);
@@ -79,13 +78,14 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 int do_accevt_wait(int event_id) {
 	struct motion_event *evt = NULL;
 	
-	spin_lock();
+	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL)
 		return -ENODATA;
 	spin_lock(&evt->waitq_lock);
 	evt->waitq_n++;
 	spin_unlock(&evt->waitq_lock);
+	spin_unlock(&event_list_lock);
 	
 	DEFINE_WAIT(wait);
 	
@@ -94,16 +94,20 @@ int do_accevt_wait(int event_id) {
 		
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);
 		
-		spin_lock(&evt->waitq_lock);
+		spin_lock(&evt->event_lock);
 		if (evt->happened) {
 			if (--evt->waitq_n == 0)
 				evt->happend = false;
-			spin_unlock(&evt->waitq_lock);
+			spin_unlock(&evt->event_lock);
 			break;
 		}
 		if (evt->destroyed) {
+			if (--evt->waitq_n == 0)
+				evt->destroyed = false;
+			spin_unlock(&evt->event_lock);
+			break;
 		}
-		spin_unlock(&evt->waitq_lock);
+		spin_unlock(&evt->event_lock);
 		
 		if (signal_pending(current))
 			break;

@@ -24,7 +24,7 @@
 #include "accelerationd.h"
 
 static int effective_linaccel_sensor = -1;
-
+static int sensor_mode = 1;
 
 /* helper functions which you should use */
 static int open_sensors(struct sensors_module_t **hw_module,
@@ -47,9 +47,15 @@ int main(int argc, char **argv)
 {
 	struct sensors_module_t *sensors_module = NULL;
 	struct sensors_poll_device_t *sensors_device = NULL;
-	int errsv = 0; /* Error that we pull up from system call*/
+	/* int errsv = 0;  Error that we pull up from system call*/
 
-	if (argv[1] && strcmp(argv[1], "-e") == 0)
+	if (argc > 1 && strcmp(argv[1], "-o") == 0)
+		sensor_mode = 0;
+	if (argc > 2 && strcmp(argv[2], "-o") == 0)
+		sensor_mode = 0;
+	if (argc > 1 && strcmp(argv[1], "-e") == 0)
+		goto emulation;
+	if (argc > 2 && strcmp(argv[2], "-e") == 0)
 		goto emulation;
 
 	/*
@@ -110,11 +116,18 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		cur_acceleration = (struct dev_acceleration *)
 			malloc(sizeof(struct dev_acceleration));
 		for (i = 0; i < count; ++i) {
-			if (buffer[i].sensor == effective_sensor) {
+			if (buffer[i].sensor == effective_linaccel_sensor) {
 				cur_acceleration->x = (int)(buffer[i].acceleration.x * 100);
 				cur_acceleration->y = (int)(buffer[i].acceleration.y * 100);
 				cur_acceleration->z = (int)(buffer[i].acceleration.z * 100);
-				err = syscall(__NR_set_acceleration, cur_acceleration);
+				if (sensor_mode == 0) {
+					err = syscall(__NR_set_acceleration,
+						      cur_acceleration);
+				}
+				else {
+					err = syscall(__NR_accevt_signal,
+						     cur_acceleration);
+				}
 				if (err < 0) {
 					goto error;
 				}

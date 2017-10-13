@@ -68,7 +68,7 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	spin_lock_init(&temp->waitq_lock);
 
 	spin_lock(&event_list_lock);
-	list_add(&temp->list, &event_list.list);
+	list_add(&temp->list, &event_list);
 	spin_unlock(&event_list_lock);
 
 	return 0;

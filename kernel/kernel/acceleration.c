@@ -51,14 +51,19 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 		return -ENOMEM;
 
 	temp->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
-	if (temp->baseline == NULL)
+	if (temp->baseline == NULL) {
+		kfree(temp);
 		return -ENOMEM;
+	}
 
 	v = copy_from_user(temp->baseline,
 			   acceleration,
 			   sizeof(struct acc_motion));
-	if (v < 0)
+	if (v < 0) {
+		kfree(temp->baseline);
+		kfree(temp);
 		return -EFAULT;
+	}
 	if (temp->baseline->frq > WINDOW)
 		temp->baseline->frq = WINDOW;
 
@@ -109,8 +114,6 @@ int do_accevt_wait(int event_id) {
 	evt->waitq_n++;
 	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
-	
-	
 	
 	while (1) {
 		

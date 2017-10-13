@@ -7,14 +7,14 @@
 static DEFINE_SPINLOCK(acc_lock);	/* spinlock for `acc` */
 static struct dev_acceleration acc;	/* used by set_acceleration syscall */
 
-static DEFINE SPINLOCK(acclist_lock);
 static LIST_HEAD(acc_list);
+static DEFINE SPINLOCK(acclist_lock);
 
 static int number_of_events;
+static LIST_HEAD(event_list);
 static DEFINE_SPINLOCK(event_list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
 
-static LIST_HEAD(&event_list);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
@@ -56,6 +56,8 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	v = copy_from_user(temp->baseline, acceleration, sizeof(struct acc_motion));
 	if (v < 0)
 		return -EFAULT;
+	if (temp->baseline->frq > WINDOW)
+		temp->baseline->frq = WINDOW;
 
 	spin_lock(&event_counter_lock);
 	temp->id = number_of_events;
@@ -67,7 +69,7 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	spin_lock_init(&temp->waitq_lock);
 
 	spin_lock(&event_list_lock);
-	list_add(&temp->list, &event_list.list);
+	list_add(&temp->list, &event_list);
 	spin_unlock(&event_list_lock);
 
 	return 0;
@@ -138,7 +140,6 @@ SYSCALL_DEFINE1(accevt_wait, int event_id)
 	return do_accevt_wait(event_id);
 }
 
-
 SYSCALL_DEFINE1(accevt_destroy, int event_id)
 {
 	struct motion_event *evt = NULL;
@@ -161,22 +162,15 @@ SYSCALL_DEFINE1(accevt_destroy, int event_id)
 	
 }
 
-
-static inline int satisfy_baseline(struct acceleration_list *prev,
-				   struct acceleration_list *curr,
-				   struct acc_motion *baseline)
+static inline int not_noise(struct acceleration_list *prev,
+			    struct acceleration_list *curr,
+			    struct acc_motion *baseline)
 {
 	int delta_x = abs(prev->acc.x - curr->acc.x);
 	int delta_y = abs(prev->acc.y - curr->acc.y);
 	int delta_z = abs(prev->acc.z - curr->acc.z);
 	int strength = delta_x + delta_y + delta_z;
-	if (strength > NOISE && 
-	    delta_x >= baseline->dlt_x &&
-	    delta_y >= baseline->dlt_y &&
-	    delta_z >= baseline->dlt_z) {
-		return 1;
-	}
-	return 0;
+	return strength > NOISE;
 }
 
 static int verify_event(struct list_head *acc_list,
@@ -184,7 +178,11 @@ static int verify_event(struct list_head *acc_list,
 {
 	struct acceleration_list *curr, *prev;
 	int frq = 0;
+	int delta_x = 0;
+	int delta_y = 0;
+	int delta_z = 0;
 	int first_loop = 1;
+	int dlt_x, dlt_y, dlt_z, strength;
 
 	list_for_each_entry(curr, acc_list, list) {
 		if (first_loop) {
@@ -192,11 +190,23 @@ static int verify_event(struct list_head *acc_list,
 			prev = curr;
 			continue;
 		}
-		if (satisfy_baseline(prev, curr, baseline))
+		dlt_x = abs(prev->acc.x - curr->acc.x);
+		dlt_y = abs(prev->acc.y - curr->acc.y);
+		dlt_z = abs(prev->acc.z - curr->acc.z);
+		strength = dlt_x + dlt_y + dlt_z;
+		if (strength > NOISE) {
 			++frq;
+			delta_x += dlt_x;
+			delta_y += dlt_y;
+			delta_z += dlt_z;
+		}
 		prev = curr;
-		if (frq >= baseline->frq)
-			return 1;
+	}
+	if (frq >= baseline->frq &&
+	    delta_x > baseline->dlt_x &&
+	    delta_y > baseline->dlt_y &&
+	    delta_z > baseline->dlt_z) {
+		return 1;
 	}
 	return 0;
 }

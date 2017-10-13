@@ -16,6 +16,8 @@ struct motion_events event_list;
 static DEFINE_SPINLOCK(event_list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
 
+LIST_HEAD(&event_list);
+
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
 	int ret = 0;
@@ -83,18 +85,22 @@ int do_accevt_wait(int event_id) {
 	
 	DEFINE_WAIT(wait);
 	
+	spin_lock(&evt->waitq_lock);
+	evt->waitq_n++;
+	spin_unlock(&evt->waitq_lock);
+	
 	while (1) {
-		spin_lock(&evt->waitq_lock);
 		
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);
+		
+		spin_lock(&evt->waitq_lock);
 		if (evt->happened) {
 			if (--evt->waitq_n == 0)
 				evt->happend = false;
 			spin_unlock(&evt->waitq_lock);
 			break;
 		}
-		
-		spin_unlock($evt->waitq_lock);
+		spin_unlock(&evt->waitq_lock);
 		
 		if (signal_pending(current))
 			break;

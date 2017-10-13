@@ -1,6 +1,7 @@
 #ifndef __LINUX_ACCELERATION_H
 #define __LINUX_ACCELERATION_H
 #include <linux/list.h>
+#include <linux/spinlock.h>
 
 struct dev_acceleration {
 	int x; /* acceleration along X-axis */
@@ -25,7 +26,7 @@ struct motion_event {
 	int event_id;
 	struct list_head list;
 	wait_queue_head_t waitq;
-	spin_lock_t event_lock;
+	spinlock_t event_lock;
 	int waitq_n;
 	bool happened;
 	struct acc_motion *baseline;

@@ -94,9 +94,9 @@ int do_accevt_wait(int event_id) {
 	evt = find_event(event_id);
 	if (evt == NULL)
 		return -ENODATA;
-	spin_lock(&evt->waitq_lock);
+	spin_lock(&evt->event_lock);
 	evt->waitq_n++;
-	spin_unlock(&evt->waitq_lock);
+	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
 	
 	DEFINE_WAIT(wait);
@@ -137,6 +137,30 @@ SYSCALL_DEFINE1(accevt_wait, int event_id)
 {
 	return do_accevt_wait(event_id);
 }
+
+
+SYSCALL_DEFINE1(accevt_destroy, int event_id)
+{
+	struct motion_event *evt = NULL;
+	
+	spin_lock(&event_list_lock);
+	evt = find_event(event_id);
+	if (evt == NULL)
+		return -ENODATA;
+	spin_lock(&evt->event_lock);
+	evt->destroyed = true;
+	spin_unlock(&evt->event_lock);
+	spin_unlock(&event_list_lock);
+	
+	wake_up(&evt->waitq);
+	
+	while (1) {
+		spin_lock(&evt->event_lock);
+		if (evt->
+	}
+	
+}
+
 
 static inline int satisfy_baseline(struct acceleration_list *prev,
 				   struct acceleration_list *curr,

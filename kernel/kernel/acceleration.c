@@ -56,6 +56,8 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	v = copy_from_user(temp->baseline, acceleration, sizeof(struct acc_motion));
 	if (v < 0)
 		return -EFAULT;
+	if (temp->baseline->frq > WINDOW)
+		temp->baseline->frq = WINDOW;
 
 	spin_lock(&event_counter_lock);
 	temp->id = number_of_events;

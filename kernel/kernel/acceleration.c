@@ -115,12 +115,6 @@ int do_accevt_wait(int event_id) {
 			spin_unlock(&evt->event_lock);
 			break;
 		}
-		if (evt->destroyed) {
-			if (--evt->waitq_n == 0)
-				evt->destroyed = false;
-			spin_unlock(&evt->event_lock);
-			break;
-		}
 		spin_unlock(&evt->event_lock);
 		
 		if (signal_pending(current))

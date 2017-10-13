@@ -10,6 +10,8 @@ struct motion_events event_list;
 static DEFINE_SPINLOCK(list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
 
+LIST_HEAD(&event_list);
+
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
 	int ret = 0;

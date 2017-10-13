@@ -12,11 +12,10 @@ static LIST_HEAD(acc_list);
 
 static DEFINE_SPINLOCK(motion_event_lock);
 static int number_of_events;
-struct motion_events event_list;
 static DEFINE_SPINLOCK(event_list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
 
-LIST_HEAD(&event_list);
+static LIST_HEAD(&event_list);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
@@ -73,6 +72,19 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	spin_unlock(&event_list_lock);
 
 	return 0;
+}
+
+struct motion_events *find_event(int id) {
+	struct motion_events *temp;
+
+	temp = NULL;
+	list_for_each_entry(temp, &event_list, list) {
+		if (temp == NULL)
+			return NULL;
+		if (temp->event_id == id)
+			return temp;
+	}
+	return NULL;
 }
 
 

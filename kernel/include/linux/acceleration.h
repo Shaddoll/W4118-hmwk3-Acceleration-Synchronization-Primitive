@@ -25,6 +25,7 @@ struct motion_events {
 	int waitq_n;
 	bool happened;
 	spin_lock_t waitq_lock;
+	struct acc_motion *baseline;
 };
 
 

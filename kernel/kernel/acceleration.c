@@ -5,6 +5,10 @@
 
 struct dev_acceleration acc;
 static DEFINE_SPINLOCK(motion_event_lock);
+static int number_of_events;
+struct motion_events event_list;
+static DEFINE_SPINLOCK(list_lock);
+static DEFINE_SPINLOCK(event_counter_lock);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
@@ -21,6 +25,38 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, accel)
 	return do_set_acceleration(accel);
 }
 
+int do_accevt_create(struct acc_motion __user *acceleration) {
+	int id;
+	struct motion_events *temp;
+	int v;
+
+	temp = kmalloc(sizeof(struct motion_events), GFP_KERNEL);
+	if (temp == NULL)
+		return -ENOMEM;
+
+	temp->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
+	if (kacceleration == NULL)
+		return -ENOMEM;
+
+	v = copy_from_user(temp->baseline, acceleration, sizeof(struct acc_motion));
+	if (v < 0)
+		return -EFAULT;
+
+	spin_lock(&event_counter_lock);
+	temp->id = number_of_events;
+	number_of_events = number_of_events + 1;
+	spin_unlock(&event_counter_lock);
+
+	init_waitqueue_head(&(temp->waitq));
+	temp->waitq_n = 0;
+	spin_lock_init(&temp->waitq_lock);
+
+	spin_lock(&list_lock);
+	list_add(&temp->list, &event_list.list);
+	spin_unlock(&list_lock);
+
+	return 0;
+}
 
 
 int do_accevt_wait(int event_id) {

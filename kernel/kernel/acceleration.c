@@ -69,17 +69,17 @@ int do_accevt_wait(int event_id) {
 	DEFINE_WAIT(wait);
 	
 	while (1) {
-		spin_lock(&evt->waitq_lock);
 		
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);
+		
+		spin_lock(&evt->waitq_lock);
 		if (evt->happened) {
 			if (--evt->waitq_n == 0)
 				evt->happend = false;
 			spin_unlock(&evt->waitq_lock);
 			break;
 		}
-		
-		spin_unlock($evt->waitq_lock);
+		spin_unlock(&evt->waitq_lock);
 		
 		if (signal_pending(current))
 			break;

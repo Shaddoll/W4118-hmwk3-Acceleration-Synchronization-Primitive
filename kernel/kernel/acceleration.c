@@ -140,8 +140,8 @@ SYSCALL_DEFINE1(accevt_wait, int event_id)
 	return do_accevt_wait(event_id);
 }
 
-SYSCALL_DEFINE1(accevt_destroy, int event_id)
-{
+
+int do_accevt_destroy(int event_id) {
 	struct motion_event *evt = NULL;
 	
 	spin_lock(&event_list_lock);
@@ -149,7 +149,8 @@ SYSCALL_DEFINE1(accevt_destroy, int event_id)
 	if (evt == NULL)
 		return -ENODATA;
 	spin_lock(&evt->event_lock);
-	evt->destroyed = true;
+	evt->happened = true;
+	list_del(&evt->list);
 	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
 	
@@ -157,9 +158,21 @@ SYSCALL_DEFINE1(accevt_destroy, int event_id)
 	
 	while (1) {
 		spin_lock(&evt->event_lock);
-		if (evt->
+		if (evt->happened == false) {
+			spin_un_lock(&evt->event_lock);
+			break;
+		}
+		spin_unlock(&evt->event_lock);
 	}
 	
+	free(evt);
+	return 0;
+}
+
+
+SYSCALL_DEFINE1(accevt_destroy, int event_id)
+{
+	return do_accevt_destroy(event_id);	
 }
 
 static inline int not_noise(struct acceleration_list *prev,

@@ -1,6 +1,6 @@
 #ifndef __LINUX_ACCELERATION_H
 #define __LINUX_ACCELERATION_H
-
+#include <linux/list.h>
 struct dev_acceleration {
 	int x; /* acceleration along X-axis */
 	int y; /* acceleration along Y-axis */
@@ -17,6 +17,11 @@ struct dev_acceleration {
 /*Define the window*/
 #define WINDOW 20
 
+
+struct motion_events {
+	int event_id;
+	struct list_head list;
+};
 
 
 /*

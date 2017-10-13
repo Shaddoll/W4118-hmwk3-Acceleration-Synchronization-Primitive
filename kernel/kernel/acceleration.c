@@ -1,8 +1,10 @@
 #include <linux/syscalls.h>
 #include <asm-generic/errno-base.h>
 #include <linux/acceleration.h>
+#include <linux/spinlock.h>
 
 struct dev_acceleration acc;
+static DEFINE_SPINLOCK(motion_event_lock);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {

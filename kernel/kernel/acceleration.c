@@ -70,6 +70,10 @@ int do_accevt_wait(int event_id) {
 	
 	DEFINE_WAIT(wait);
 	
+	spin_lock(&evt->waitq_lock);
+	evt->waitq_n++;
+	spin_unlock(&evt->waitq_lock);
+	
 	while (1) {
 		
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);

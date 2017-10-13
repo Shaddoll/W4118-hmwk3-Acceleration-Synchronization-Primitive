@@ -21,6 +21,7 @@ struct dev_acceleration {
 struct motion_events {
 	int event_id;
 	struct list_head list;
+	wait_queue_head_t wait_queue;
 };
 
 

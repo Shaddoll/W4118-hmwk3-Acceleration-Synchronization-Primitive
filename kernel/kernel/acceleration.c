@@ -62,17 +62,18 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 
 
 int do_accevt_wait(int event_id) {
-	struct motion_events *evt = NULL;
+	struct motion_event *evt = NULL;
 	
+	spin_lock();
 	evt = find_event(event_id);
 	if (evt == NULL)
 		return -ENODATA;
-	
-	DEFINE_WAIT(wait);
-	
 	spin_lock(&evt->waitq_lock);
 	evt->waitq_n++;
 	spin_unlock(&evt->waitq_lock);
+	
+	DEFINE_WAIT(wait);
+	
 	
 	while (1) {
 		
@@ -84,6 +85,8 @@ int do_accevt_wait(int event_id) {
 				evt->happend = false;
 			spin_unlock(&evt->waitq_lock);
 			break;
+		}
+		if (evt->destroyed) {
 		}
 		spin_unlock(&evt->waitq_lock);
 		

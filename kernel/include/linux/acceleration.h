@@ -18,13 +18,14 @@ struct dev_acceleration {
 #define WINDOW 20
 
 
-struct motion_events {
+struct motion_event {
 	int event_id;
 	struct list_head list;
 	wait_queue_head_t waitq;
-	spin_lock_t waitq_lock;
+	spin_lock_t event_lock;
 	int waitq_n;
 	bool happened;
+	bool destroyed;
 	struct acc_motion *baseline;
 };
 

@@ -193,7 +193,8 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 	list_for_each_entry(motion, &event_list, list) {
 		/* verify if the motion event's baseline is satisfied */
 		if (verify_event(&acc_list, motion->baseline)) {
-			
+			motion->happened = true;
+			wake_up_interruptible(&(motion->waitq));
 		}
 	}
 	spinunlock(&event_list_lock);

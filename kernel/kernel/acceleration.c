@@ -73,32 +73,53 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	return 0;
 }
 
+struct motion_events *find_event(int id) {
+	struct motion_events *temp;
+
+	temp = NULL;
+	list_for_each_entry(temp, &event_list, list) {
+		if (temp == NULL)
+			return NULL;
+		if (temp->event_id == id)
+			return temp;
+	}
+	return NULL;
+}
+
 
 int do_accevt_wait(int event_id) {
-	struct motion_events *evt = NULL;
+	struct motion_event *evt = NULL;
 	
+	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL)
 		return -ENODATA;
-	
-	DEFINE_WAIT(wait);
-	
 	spin_lock(&evt->waitq_lock);
 	evt->waitq_n++;
 	spin_unlock(&evt->waitq_lock);
+	spin_unlock(&event_list_lock);
+	
+	DEFINE_WAIT(wait);
+	
 	
 	while (1) {
 		
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);
 		
-		spin_lock(&evt->waitq_lock);
+		spin_lock(&evt->event_lock);
 		if (evt->happened) {
 			if (--evt->waitq_n == 0)
 				evt->happend = false;
-			spin_unlock(&evt->waitq_lock);
+			spin_unlock(&evt->event_lock);
 			break;
 		}
-		spin_unlock(&evt->waitq_lock);
+		if (evt->destroyed) {
+			if (--evt->waitq_n == 0)
+				evt->destroyed = false;
+			spin_unlock(&evt->event_lock);
+			break;
+		}
+		spin_unlock(&evt->event_lock);
 		
 		if (signal_pending(current))
 			break;

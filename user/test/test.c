@@ -28,7 +28,10 @@ int main(){
 
 
 	int event_id1 = syscall(250, &event1);//create
-
+	if (event_id1 < 0) {
+		perror("create failed");
+		return 1;
+	}
 	for(i = 0; i < N; i++) {
 		pid = fork();
 		if (pid < 0) {

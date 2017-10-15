@@ -97,7 +97,17 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - 
 		 * scale it and send it to your kernel
 		 */
-		err = syscall(__NR_set_acceleration, cur_acceleration);
+		printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
+		if (sensor_mode == 0) {
+			err = syscall(__NR_set_acceleration,
+				      cur_acceleration);
+		}
+		else {
+			err = syscall(__NR_accevt_signal,
+				     cur_acceleration);
+			printf("%d\n", err);
+		}
+		printf("==================================\n");
 		if (err < 0) {
 			goto error;
 		}

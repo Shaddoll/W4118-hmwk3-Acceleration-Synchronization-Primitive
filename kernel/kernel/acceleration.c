@@ -110,7 +110,7 @@ int do_accevt_wait(int event_id) {
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
-		spin_unlock(&evt->event_list_lock);
+		spin_unlock(&event_list_lock);
 		return -ENODATA;
 	}
 	spin_lock(&evt->event_lock);

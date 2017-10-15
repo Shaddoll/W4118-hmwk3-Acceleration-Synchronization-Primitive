@@ -45,6 +45,9 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, accel)
 int do_accevt_create(struct acc_motion __user *acceleration) {
 	struct motion_event *temp;
 	int v;
+	int ret;
+	
+	printk("========== accevt_create =========\n");
 
 	temp = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	if (temp == NULL)
@@ -61,7 +64,7 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	v = copy_from_user(temp->baseline,
 			   acceleration,
 			   sizeof(struct acc_motion));
-	if (v < 0) {
+	if (v != 0) {
 		kfree(temp->baseline);
 		kfree(temp);
 		return -EFAULT;
@@ -71,8 +74,10 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 
 	spin_lock(&event_counter_lock);
 	temp->event_id = number_of_events;
+	ret = number_of_events;
 	number_of_events = number_of_events + 1;
 	spin_unlock(&event_counter_lock);
+	printk("event_id = %d\n", temp->event_id);
 
 	init_waitqueue_head(&(temp->waitq));
 	temp->waitq_n = 0;
@@ -82,7 +87,7 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	list_add(&temp->list, &event_list);
 	spin_unlock(&event_list_lock);
 
-	return 0;
+	return ret;
 }
 
 SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, accel)
@@ -109,6 +114,9 @@ int do_accevt_wait(int event_id) {
 	int ret = 0;
 	DEFINE_WAIT(wait);
 	
+	printk("========== accevt_wait =========\n");
+	
+	printk("wait for event_id = %d\n", event_id);
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
@@ -148,6 +156,7 @@ int do_accevt_wait(int event_id) {
 	
 	finish_wait(&evt->waitq, &wait);
 	
+	printk("wait quit for %d\n", ret);
 	return ret;
 }
 
@@ -161,10 +170,15 @@ SYSCALL_DEFINE1(accevt_wait, int, event_id)
 int do_accevt_destroy(int event_id) {
 	struct motion_event *evt = NULL;
 	
+	printk("============ accevt_destroy ============\n");
+	printk("destroy event_id = %d\n", event_id);
+	
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
-	if (evt == NULL)
+	if (evt == NULL) {
+		spin_unlock(&event_list_lock);
 		return -ENODATA;
+	}
 	spin_lock(&evt->event_lock);
 	evt->destroyed = true;
 	list_del(&evt->list);
@@ -183,6 +197,8 @@ int do_accevt_destroy(int event_id) {
 	}
 	
 	kfree(evt);
+	
+	printk("destroy success event_id = %d\n", event_id);
 	return 0;
 }
 
@@ -232,10 +248,14 @@ static int verify_event(struct list_head *acc_list,
 		delta_z += dlt_z;
 		prev = curr;
 	}
+	//printk("======== verify event =======\n");
+	//printk("%d %d %d %d\n", frq, delta_x, delta_y, delta_z);
+	//printk("%d %d %d %d\n", baseline->frq, baseline->dlt_x, baseline->dlt_y, baseline->dlt_z);
+	
 	if (frq >= baseline->frq &&
-	    delta_x > baseline->dlt_x &&
-	    delta_y > baseline->dlt_y &&
-	    delta_z > baseline->dlt_z) {
+	    delta_x >= baseline->dlt_x &&
+	    delta_y >= baseline->dlt_y &&
+	    delta_z >= baseline->dlt_z) {
 		return 1;
 	}
 	return 0;
@@ -256,7 +276,7 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 	ret = copy_from_user(&(new_data->acc),
 				acceleration,
 				sizeof(struct dev_acceleration));
-	if (ret < 0) {
+	if (ret != 0) {
 		kfree(new_data);
 		return -EFAULT;
 	}

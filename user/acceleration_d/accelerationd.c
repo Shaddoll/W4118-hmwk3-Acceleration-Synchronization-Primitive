@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 	 * TODO: Implement your code to make this process a daemon in
 	 * daemon_mode function
 	 */
-	daemon_mode();
+	//daemon_mode();
 
 	printf("Opening sensors...\n");
 	if (open_sensors(&sensors_module,
@@ -135,8 +135,10 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 						      cur_acceleration);
 				}
 				else {
+					printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
 					err = syscall(__NR_accevt_signal,
 						     cur_acceleration);
+					printf("%d\n", err);
 				}
 				if (err < 0) {
 					goto error;

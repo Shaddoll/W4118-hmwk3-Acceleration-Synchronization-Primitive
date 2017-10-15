@@ -24,7 +24,7 @@ int main(){
 	N = 5;
 
 	struct acc_motion event1;
-	initialize_event(10000, 1, 1, 5, &event1);
+	initialize_event(10, 0, 0, 5, &event1);
 
 
 	int event_id1 = syscall(250, &event1);//create
@@ -53,7 +53,7 @@ int main(){
 
 	if (pid > 0)
 		sleep(60);
-	temp = syscall(252, event_id1);//destroy
+	temp = syscall(253, event_id1);//destroy
 	if (temp != 0) {
 		perror("destroy error\n");
 		return 1;

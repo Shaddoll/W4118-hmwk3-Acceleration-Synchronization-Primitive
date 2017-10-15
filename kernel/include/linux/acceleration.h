@@ -23,14 +23,14 @@ struct acceleration_list {
 
 
 struct motion_event {
-	int event_id;
-	struct list_head list;
-	wait_queue_head_t waitq;
-	spinlock_t event_lock;
-	int waitq_n;
-	bool happened;
-	bool destroyed;
-	struct acc_motion *baseline;
+	int event_id;//
+	struct list_head list;//
+	wait_queue_head_t waitq;//
+	spinlock_t event_lock;//
+	int waitq_n;//
+	bool happened;    //
+	bool destroyed;   //
+	struct acc_motion *baseline; //
 };
 
 

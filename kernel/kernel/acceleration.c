@@ -42,17 +42,16 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, accel)
 	return do_set_acceleration(accel);
 }
 
-int do_accevt_create(struct acc_motion __user *acceleration) {
+int do_accevt_create(struct acc_motion __user *acceleration)
+{
 	struct motion_event *temp;
 	int v;
 	int ret;
-	
-	printk("========== accevt_create =========\n");
 
 	temp = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	if (temp == NULL)
 		return -ENOMEM;
-	
+
 	temp->happened = false;
 	temp->destroyed = false;
 	temp->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
@@ -77,7 +76,6 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	ret = number_of_events;
 	number_of_events = number_of_events + 1;
 	spin_unlock(&event_counter_lock);
-	printk("event_id = %d\n", temp->event_id);
 
 	init_waitqueue_head(&(temp->waitq));
 	temp->waitq_n = 0;
@@ -95,7 +93,8 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, accel)
 	return do_accevt_create(accel);
 }
 
-struct motion_event *find_event(int id) {
+struct motion_event *find_event(int id)
+{
 	struct motion_event *temp;
 
 	temp = NULL;
@@ -109,14 +108,12 @@ struct motion_event *find_event(int id) {
 }
 
 
-int do_accevt_wait(int event_id) {
+int do_accevt_wait(int event_id)
+{
 	struct motion_event *evt = NULL;
 	int ret = 0;
 	DEFINE_WAIT(wait);
-	
-	printk("========== accevt_wait =========\n");
-	
-	printk("wait for event_id = %d\n", event_id);
+
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
@@ -127,11 +124,11 @@ int do_accevt_wait(int event_id) {
 	evt->waitq_n++;
 	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
-	
+
 	while (1) {
-		
+
 		prepare_to_wait(&evt->waitq, &wait, TASK_INTERRUPTIBLE);
-		
+
 		spin_lock(&evt->event_lock);
 		if (evt->happened) {
 			if (--evt->waitq_n == 0)
@@ -147,16 +144,15 @@ int do_accevt_wait(int event_id) {
 			break;
 		}
 		spin_unlock(&evt->event_lock);
-		
+
 		if (signal_pending(current))
 			break;
-		
+
 		schedule();
 	}
-	
+
 	finish_wait(&evt->waitq, &wait);
-	
-	printk("wait quit for %d\n", ret);
+
 	return ret;
 }
 
@@ -167,12 +163,10 @@ SYSCALL_DEFINE1(accevt_wait, int, event_id)
 }
 
 
-int do_accevt_destroy(int event_id) {
+int do_accevt_destroy(int event_id)
+{
 	struct motion_event *evt = NULL;
-	
-	printk("============ accevt_destroy ============\n");
-	printk("destroy event_id = %d\n", event_id);
-	
+
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
@@ -184,9 +178,9 @@ int do_accevt_destroy(int event_id) {
 	list_del(&evt->list);
 	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
-	
+
 	wake_up(&evt->waitq);
-	
+
 	while (1) {
 		spin_lock(&evt->event_lock);
 		if (evt->destroyed == false) {
@@ -195,10 +189,9 @@ int do_accevt_destroy(int event_id) {
 		}
 		spin_unlock(&evt->event_lock);
 	}
-	
+
 	kfree(evt);
-	
-	printk("destroy success event_id = %d\n", event_id);
+
 	return 0;
 }
 
@@ -248,14 +241,11 @@ static int verify_event(struct list_head *acc_list,
 		delta_z += dlt_z;
 		prev = curr;
 	}
-	//printk("======== verify event =======\n");
-	//printk("%d %d %d %d\n", frq, delta_x, delta_y, delta_z);
-	//printk("%d %d %d %d\n", baseline->frq, baseline->dlt_x, baseline->dlt_y, baseline->dlt_z);
-	
+
 	if (frq >= baseline->frq &&
-	    delta_x >= baseline->dlt_x &&
-	    delta_y >= baseline->dlt_y &&
-	    delta_z >= baseline->dlt_z) {
+	    delta_x > baseline->dlt_x &&
+	    delta_y > baseline->dlt_y &&
+	    delta_z > baseline->dlt_z) {
 		return 1;
 	}
 	return 0;
@@ -268,7 +258,7 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 	struct acceleration_list *new_data;
 	struct acceleration_list *first;
 	struct motion_event *motion;
-	
+
 	new_data = kmalloc(sizeof(struct acceleration_list), GFP_KERNEL);
 	if (new_data == NULL) {
 		return -ENOMEM;

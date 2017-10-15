@@ -104,12 +104,15 @@ struct motion_event *find_event(int id) {
 
 int do_accevt_wait(int event_id) {
 	struct motion_event *evt = NULL;
+	int ret = 0;
 	DEFINE_WAIT(wait);
 	
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
-	if (evt == NULL)
+	if (evt == NULL) {
+		spin_lock(&evt->event_lock);
 		return -ENODATA;
+	}
 	spin_lock(&evt->event_lock);
 	evt->waitq_n++;
 	spin_unlock(&evt->event_lock);
@@ -126,6 +129,13 @@ int do_accevt_wait(int event_id) {
 			spin_unlock(&evt->event_lock);
 			break;
 		}
+		if (evt->destroyed) {
+			if (--evt->waitq_n == 0)
+				evt->destroyed = false;
+			ret = -EINVAL;
+			spin_unlock(&evt->event_lock);
+			break;
+		}
 		spin_unlock(&evt->event_lock);
 		
 		if (signal_pending(current))
@@ -136,7 +146,7 @@ int do_accevt_wait(int event_id) {
 	
 	finish_wait(&evt->waitq, &wait);
 	
-	return 0;
+	return ret;
 }
 
 
@@ -154,7 +164,7 @@ int do_accevt_destroy(int event_id) {
 	if (evt == NULL)
 		return -ENODATA;
 	spin_lock(&evt->event_lock);
-	evt->happened = true;
+	evt->destroyed = true;
 	list_del(&evt->list);
 	spin_unlock(&evt->event_lock);
 	spin_unlock(&event_list_lock);
@@ -163,7 +173,7 @@ int do_accevt_destroy(int event_id) {
 	
 	while (1) {
 		spin_lock(&evt->event_lock);
-		if (evt->happened == false) {
+		if (evt->destroyed == false) {
 			spin_unlock(&evt->event_lock);
 			break;
 		}

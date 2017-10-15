@@ -29,6 +29,7 @@ struct motion_event {
 	spinlock_t event_lock;
 	int waitq_n;
 	bool happened;
+	bool destroyed;
 	struct acc_motion *baseline;
 };
 

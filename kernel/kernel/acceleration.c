@@ -49,7 +49,9 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 	temp = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	if (temp == NULL)
 		return -ENOMEM;
-
+	
+	temp->happened = false;
+	temp->destroyed = false;
 	temp->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	if (temp->baseline == NULL) {
 		kfree(temp);

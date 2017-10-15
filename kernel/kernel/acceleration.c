@@ -64,8 +64,8 @@ int do_accevt_create(struct acc_motion __user *acceleration) {
 		kfree(temp);
 		return -EFAULT;
 	}
-	if (temp->baseline->frq > WINDOW)
-		temp->baseline->frq = WINDOW;
+	if (temp->baseline->frq >= WINDOW)
+		temp->baseline->frq = WINDOW - 1;
 
 	spin_lock(&event_counter_lock);
 	temp->event_id = number_of_events;
@@ -224,10 +224,10 @@ static int verify_event(struct list_head *acc_list,
 		strength = dlt_x + dlt_y + dlt_z;
 		if (strength > NOISE) {
 			++frq;
-			delta_x += dlt_x;
-			delta_y += dlt_y;
-			delta_z += dlt_z;
 		}
+		delta_x += dlt_x;
+		delta_y += dlt_y;
+		delta_z += dlt_z;
 		prev = curr;
 	}
 	if (frq >= baseline->frq &&
@@ -260,7 +260,7 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 	}
 	spin_lock(&acclist_lock);
 	list_add_tail(&(new_data->list), &acc_list);
-	if (acc_list_length == WINDOW + 1) { /* window is full */
+	if (acc_list_length == WINDOW) { /* window is full */
 		first = list_first_entry(&acc_list,
 					struct acceleration_list,
 					list);

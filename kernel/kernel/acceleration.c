@@ -17,7 +17,6 @@ static LIST_HEAD(delete_list);
 static DEFINE_SPINLOCK(event_list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
 static DEFINE_SPINLOCK(delete_list_lock);
-static DEFINE_SPINLOCK(delete_counter_lock);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
@@ -93,9 +92,8 @@ int do_accevt_create(struct acc_motion __user *acceleration)
 		number_of_events = number_of_events + 1;
 
 	}
-	spin_unlock(&delete_counter_lock);
 	spin_unlock(&delete_list_lock);
-
+	spin_unlock(&event_counter_lock);
 	init_waitqueue_head(&(temp->waitq));
 	temp->waitq_n = 0;
 	spin_lock_init(&temp->event_lock);

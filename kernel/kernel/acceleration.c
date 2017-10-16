@@ -11,10 +11,13 @@ static LIST_HEAD(acc_list);
 static DEFINE_SPINLOCK(acclist_lock);
 
 static int number_of_events;
+static int delete_list_size;
 static LIST_HEAD(event_list);
+static LIST_HEAD(delete_list);
 static DEFINE_SPINLOCK(event_list_lock);
 static DEFINE_SPINLOCK(event_counter_lock);
-
+static DEFINE_SPINLOCK(delete_list_lock);
+static DEFINE_SPINLOCK(delete_counter_lock);
 
 int do_set_acceleration(struct dev_acceleration __user *acceleration)
 {
@@ -47,6 +50,7 @@ int do_accevt_create(struct acc_motion __user *acceleration)
 	struct motion_event *temp;
 	int v;
 	int ret;
+	struct delete_node *first;
 
 	temp = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	if (temp == NULL)
@@ -72,10 +76,25 @@ int do_accevt_create(struct acc_motion __user *acceleration)
 		temp->baseline->frq = WINDOW - 1;
 
 	spin_lock(&event_counter_lock);
-	temp->event_id = number_of_events;
-	ret = number_of_events;
-	number_of_events = number_of_events + 1;
-	spin_unlock(&event_counter_lock);
+	spin_lock(&delete_list_lock);
+	if (delete_list_size > 0) {
+		first = list_first_entry(&delete_list,
+					struct delete_node,
+					list);
+		temp->event_id = first->event_id;
+		list_del(&(first->list));
+		kfree(first);
+		ret = temp->event_id;
+		delete_list_size = delete_list_size - 1;
+	}
+	else {
+		temp->event_id = number_of_events;
+		ret = number_of_events;
+		number_of_events = number_of_events + 1;
+
+	}
+	spin_unlock(&delete_counter_lock);
+	spin_unlock(&delete_list_lock);
 
 	init_waitqueue_head(&(temp->waitq));
 	temp->waitq_n = 0;
@@ -166,6 +185,8 @@ SYSCALL_DEFINE1(accevt_wait, int, event_id)
 int do_accevt_destroy(int event_id)
 {
 	struct motion_event *evt = NULL;
+	int evt_id;
+	struct delete_node *del_node = NULL;
 
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
@@ -189,9 +210,16 @@ int do_accevt_destroy(int event_id)
 		}
 		spin_unlock(&evt->event_lock);
 	}
-
+	evt_id = evt->event_id;
 	kfree(evt);
-
+	del_node = kmalloc(sizeof(struct delete_node), GFP_KERNEL);
+	if (del_node == NULL)
+		return -ENOMEM;
+	spin_lock(&delete_list_lock);
+	del_node->event_id = evt_id;
+	list_add(&del_node->list, &delete_list);
+	delete_list_size = delete_list_size + 1;
+	spin_unlock(&delete_list_lock);
 	return 0;
 }
 

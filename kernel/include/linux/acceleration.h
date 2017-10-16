@@ -13,7 +13,10 @@ struct acceleration_list {
 	struct dev_acceleration acc;
 	struct list_head list;
 };
-
+struct delete_node {
+	int event_id;
+	struct list_head list;
+};
 /*Define the noise*/
 #define NOISE 10
 

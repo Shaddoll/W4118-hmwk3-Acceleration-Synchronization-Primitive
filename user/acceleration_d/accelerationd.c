@@ -36,11 +36,40 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device);
 void daemon_mode(void)
 {
 	/* Fill in */
-	int ret = daemon(0, 0);
+	/*int ret = daemon(0, 0);
 	if (ret < 0) {
 		exit(errno);
+	}*/
+	pid_t pid;
+	pid_t sid;
+	int fd;
+
+	pid = fork();
+	if (pid < 0) {
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		exit(1);
 	}
-	return;
+	else if (pid == 0) {
+		exit(0);
+	}
+	/* child process */
+	sid = setsid();
+	if (sid < 0) {
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		exit(1);
+	}
+	umask(0);
+	chdir("/");
+	fd = open("/dev/null", O_RDWR);
+	if (fd < 0) {
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		exit(1);
+	}
+	dup2(fd, STDIN_FILENO);
+	dup2(fd, STDOUT_FILENO);
+	dup2(fd, STDERR_FILENO);
+	if (fd > 2)
+		close(fd);
 }
 
 int main(int argc, char **argv)

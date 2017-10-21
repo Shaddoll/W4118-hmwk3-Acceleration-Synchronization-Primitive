@@ -30,9 +30,8 @@ int do_set_acceleration(struct dev_acceleration __user *acceleration)
 	ret = copy_from_user(&temp_acc,
 			     acceleration,
 			     sizeof(struct dev_acceleration));
-	if (ret != 0) {
+	if (ret != 0)
 		return -EFAULT;
-	}
 	spin_lock(&acc_lock);
 	memcpy(&acc, &temp_acc, sizeof(struct dev_acceleration));
 	spin_unlock(&acc_lock);
@@ -85,8 +84,7 @@ int do_accevt_create(struct acc_motion __user *acceleration)
 		kfree(first);
 		ret = temp->event_id;
 		delete_list_size = delete_list_size - 1;
-	}
-	else {
+	} else {
 		temp->event_id = number_of_events;
 		ret = number_of_events;
 		number_of_events = number_of_events + 1;
@@ -188,7 +186,7 @@ int do_accevt_destroy(int event_id)
 	struct motion_event *evt = NULL;
 	int evt_id;
 	struct delete_node *del_node = NULL;
-	
+
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
@@ -227,7 +225,7 @@ int do_accevt_destroy(int event_id)
 
 SYSCALL_DEFINE1(accevt_destroy, int, event_id)
 {
-	return do_accevt_destroy(event_id);	
+	return do_accevt_destroy(event_id);
 }
 
 static inline int not_noise(struct acceleration_list *prev,
@@ -238,6 +236,7 @@ static inline int not_noise(struct acceleration_list *prev,
 	int delta_y = abs(prev->acc.y - curr->acc.y);
 	int delta_z = abs(prev->acc.z - curr->acc.z);
 	int strength = delta_x + delta_y + delta_z;
+
 	return strength > NOISE;
 }
 
@@ -262,9 +261,8 @@ static int verify_event(struct list_head *acc_list,
 		dlt_y = abs(prev->acc.y - curr->acc.y);
 		dlt_z = abs(prev->acc.z - curr->acc.z);
 		strength = dlt_x + dlt_y + dlt_z;
-		if (strength > NOISE) {
+		if (strength > NOISE)
 			++frq;
-		}
 		delta_x += dlt_x;
 		delta_y += dlt_y;
 		delta_z += dlt_z;
@@ -282,16 +280,15 @@ static int verify_event(struct list_head *acc_list,
 
 int do_accevt_signal(struct dev_acceleration __user *acceleration)
 {
-	static int acc_list_length = 0;
+	static int acc_list_length;
 	int ret;
 	struct acceleration_list *new_data;
 	struct acceleration_list *first;
 	struct motion_event *motion;
 
 	new_data = kmalloc(sizeof(struct acceleration_list), GFP_KERNEL);
-	if (new_data == NULL) {
+	if (new_data == NULL)
 		return -ENOMEM;
-	}
 	ret = copy_from_user(&(new_data->acc),
 				acceleration,
 				sizeof(struct dev_acceleration));
@@ -307,8 +304,7 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 					list);
 		list_del(&(first->list));
 		kfree(first);
-	}
-	else {
+	} else {
 		++acc_list_length;
 	}
 	spin_lock(&event_list_lock);

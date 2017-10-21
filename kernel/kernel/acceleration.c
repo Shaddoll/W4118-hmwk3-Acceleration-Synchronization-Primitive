@@ -135,7 +135,7 @@ int do_accevt_wait(int event_id)
 	evt = find_event(event_id);
 	if (evt == NULL) {
 		spin_unlock(&event_list_lock);
-		return -ENODATA;
+		return -EINVAL;
 	}
 	spin_lock(&evt->event_lock);
 	evt->waitq_n++;

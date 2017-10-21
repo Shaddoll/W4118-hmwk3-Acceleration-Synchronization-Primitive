@@ -61,13 +61,20 @@ int main(int argc, char**argv){
 				perror("wait error\n");
 				return 1;
 			}
-			printf("%d detected a shake\n", getpid());
+			if (i%3 == 0)
+				printf("%d detected a horizontal shake\n", getpid());
+			else if (i%3 == 1)
+				printf("%d detected a vertical shake\n", getpid());
+			else
+				printf("%d detected a shake\n", getpid());
 			break;
 		}
 	}
 
 	if (pid > 0)
 		sleep(60);
+	else
+		return 0;
 	temp = syscall(253, event_id1);//destroy
 	if (temp != 0) {
 		perror("destroy error\n");

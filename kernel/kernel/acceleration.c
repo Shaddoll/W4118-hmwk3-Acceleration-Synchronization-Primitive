@@ -162,8 +162,10 @@ int do_accevt_wait(int event_id)
 		}
 		spin_unlock(&evt->event_lock);
 
-		if (signal_pending(current))
+		if (signal_pending(current)) {
+			ret = -EINTR;
 			break;
+		}
 
 		schedule();
 	}

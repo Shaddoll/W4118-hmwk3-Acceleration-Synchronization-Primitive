@@ -286,6 +286,8 @@ int do_accevt_signal(struct dev_acceleration __user *acceleration)
 	struct acceleration_list *first;
 	struct motion_event *motion;
 
+	if (current_euid() != 0 && current_uid() != 0)
+		return -EACCES;
 	new_data = kmalloc(sizeof(struct acceleration_list), GFP_KERNEL);
 	if (new_data == NULL)
 		return -ENOMEM;

@@ -24,27 +24,27 @@ int main(int argc, char**argv){
 	if (argc == 2) {
 		N = atoi(argv[1]);
 	} else {
-		printf("parameters incorrect");
+		fprintf(stderr, "parameters incorrect");
 		return 1;
 	}
 
 	struct acc_motion event1, event2, event3;
 	initialize_event(10, 0, 0, 5, &event1);
-	initialize_event(10, 0, 0, 5, &event2);
-	initialize_event(10, 0, 0, 5, &event3);
+	initialize_event(0, 10, 0, 5, &event2);
+	initialize_event(0, 0, 0, 5, &event3);
 
 
 	int event_id1 = syscall(250, &event1);//create
 	int event_id2 = syscall(250, &event2);//create
 	int event_id3 = syscall(250, &event3);//create
 	if (event_id1 < 0 || event_id2 < 0 || event_id3 < 0) {
-		perror("create failed\n");
+		fprintf(stderr, "create failed\n");
 		return 1;
 	}
 	for(i = 0; i < N; i++) {
 		pid = fork();
 		if (pid < 0) {
-			perror("fork failed\n");
+			fprintf(stderr, "fork failed\n");
 			return 1;
 		}
 		else if (pid > 0)
@@ -58,7 +58,7 @@ int main(int argc, char**argv){
 			else
                         	w = syscall(251, event_id3);//wait
 			if (w != 0) {
-				perror("wait error\n");
+				printf("wait error\n");
 				return 1;
 			}
 			if (i%3 == 0)
@@ -75,11 +75,15 @@ int main(int argc, char**argv){
 		sleep(60);
 	else
 		return 0;
+	printf("destroy begin\n");
 	temp = syscall(253, event_id1);//destroy
+	printf("destroy end\n");
 	temp1 = syscall(253, event_id2);
+	printf("destroy end\n");
 	temp2 = syscall(253, event_id3);
+	printf("destroy end\n");
 	if (temp != 0 || temp1 != 0 || temp2 != 0) {
-		perror("destroy error\n");
+		fprintf(stderr, "destroy error\n");
 		return 1;
 	}
 	for(i = 0; i < N; i++)

@@ -160,12 +160,13 @@ int do_accevt_wait(int event_id)
 			spin_unlock(&evt->event_lock);
 			break;
 		}
-		spin_unlock(&evt->event_lock);
-
 		if (signal_pending(current)) {
 			ret = -EINTR;
+			--evt->waitq_n;
+			spin_unlock(&evt->event_lock);
 			break;
 		}
+		spin_unlock(&evt->event_lock);
 
 		schedule();
 	}
@@ -187,7 +188,7 @@ int do_accevt_destroy(int event_id)
 	struct motion_event *evt = NULL;
 	int evt_id;
 	struct delete_node *del_node = NULL;
-
+	
 	spin_lock(&event_list_lock);
 	evt = find_event(event_id);
 	if (evt == NULL) {
@@ -204,7 +205,7 @@ int do_accevt_destroy(int event_id)
 
 	while (1) {
 		spin_lock(&evt->event_lock);
-		if (evt->destroyed == false) {
+		if (evt->waitq_n == 0) {
 			spin_unlock(&evt->event_lock);
 			break;
 		}

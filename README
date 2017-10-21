@@ -1,0 +1,11 @@
+Team members:
+	Zijian Chen	zc2386
+	Xianda Gao	xg2280
+	Haoci Zhang	hz2450
+
+Files:
+	kernel/kernel/acceleration.c
+	kernel/include/linux/acceleration.h
+	user/acceleration_d/accelerationd.c
+	user/acceleration_d/accelerationd.h
+	user/test/test.c

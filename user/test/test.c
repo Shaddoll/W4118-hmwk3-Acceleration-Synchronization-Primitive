@@ -29,8 +29,8 @@ int main(int argc, char**argv){
 	}
 
 	struct acc_motion event1, event2, event3;
-	initialize_event(10, 0, 0, 5, &event1);
-	initialize_event(0, 10, 0, 5, &event2);
+	initialize_event(50, 0, 0, 5, &event1);
+	initialize_event(0, 50, 0, 5, &event2);
 	initialize_event(0, 0, 0, 5, &event3);
 
 

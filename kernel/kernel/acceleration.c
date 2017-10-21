@@ -272,9 +272,9 @@ static int verify_event(struct list_head *acc_list,
 	}
 
 	if (frq >= baseline->frq &&
-	    delta_x > baseline->dlt_x &&
-	    delta_y > baseline->dlt_y &&
-	    delta_z > baseline->dlt_z) {
+	    delta_x >= baseline->dlt_x &&
+	    delta_y >= baseline->dlt_y &&
+	    delta_z >= baseline->dlt_z) {
 		return 1;
 	}
 	return 0;

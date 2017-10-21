@@ -46,15 +46,17 @@ void daemon_mode(void)
 
 	pid = fork();
 	if (pid < 0) {
+		fprintf(stderr, "fork\n");
 		fprintf(stderr, "error: %s\n", strerror(errno));
 		exit(1);
 	}
-	else if (pid == 0) {
+	else if (pid > 0) {
 		exit(0);
 	}
 	/* child process */
 	sid = setsid();
 	if (sid < 0) {
+		fprintf(stderr, "setsid\n");
 		fprintf(stderr, "error: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -62,6 +64,7 @@ void daemon_mode(void)
 	chdir("/");
 	fd = open("/dev/null", O_RDWR);
 	if (fd < 0) {
+		fprintf(stderr, "open\n");
 		fprintf(stderr, "error: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
 	 * TODO: Implement your code to make this process a daemon in
 	 * daemon_mode function
 	 */
-	//daemon_mode();
+	daemon_mode();
 
 	printf("Opening sensors...\n");
 	if (open_sensors(&sensors_module,
@@ -126,7 +129,7 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - 
 		 * scale it and send it to your kernel
 		 */
-		printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
+		//printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
 		if (sensor_mode == 0) {
 			err = syscall(__NR_set_acceleration,
 				      cur_acceleration);
@@ -136,7 +139,7 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 				     cur_acceleration);
 			printf("%d\n", err);
 		}
-		printf("==================================\n");
+		//printf("==================================\n");
 		if (err < 0) {
 			goto error;
 		}
@@ -164,10 +167,10 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 						      cur_acceleration);
 				}
 				else {
-					printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
+					//printf("%d %d %d\n", cur_acceleration->x, cur_acceleration->y, cur_acceleration->z);
 					err = syscall(__NR_accevt_signal,
 						     cur_acceleration);
-					printf("%d\n", err);
+					//printf("%d\n", err);
 				}
 				if (err < 0) {
 					goto error;

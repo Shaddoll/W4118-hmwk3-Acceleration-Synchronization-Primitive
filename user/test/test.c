@@ -30,8 +30,8 @@ int main(int argc, char**argv){
 
 	struct acc_motion event1, event2, event3;
 	initialize_event(10, 0, 0, 5, &event1);
-	initialize_event(10, 0, 0, 5, &event2);
-	initialize_event(10, 0, 0, 5, &event3);
+	initialize_event(0, 10, 0, 5, &event2);
+	initialize_event(0, 0, 0, 5, &event3);
 
 
 	int event_id1 = syscall(250, &event1);//create
@@ -47,8 +47,10 @@ int main(int argc, char**argv){
 			perror("fork failed\n");
 			return 1;
 		}
-		else if (pid > 0)
+		else if (pid > 0) {
+			printf("pid: %d\n", pid);
 			continue;
+		}
 		else {
 			int w;
 			if (i%3 == 0)
@@ -71,13 +73,20 @@ int main(int argc, char**argv){
 		}
 	}
 
-	if (pid > 0)
+	if (pid > 0) {
+		printf("sleep begin\n");
 		sleep(60);
+		printf("sleep end\n");
+	}
 	else
 		return 0;
+	printf("destroy begin\n");
 	temp = syscall(253, event_id1);//destroy
+	printf("destroy end\n");
 	temp1 = syscall(253, event_id2);
+	printf("destroy end\n");
 	temp2 = syscall(253, event_id3);
+	printf("destroy end\n");
 	if (temp != 0 || temp1 != 0 || temp2 != 0) {
 		perror("destroy error\n");
 		return 1;

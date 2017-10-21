@@ -19,7 +19,7 @@ void initialize_event(int x, int y, int z, int f, struct acc_motion *a) {
 	a->frq = f;
 }
 int main(int argc, char**argv){
-	int N, pid, temp, i;
+	int N, pid, temp, temp1, temp2, i;
 
 	if (argc == 2) {
 		N = atoi(argv[1]);
@@ -76,7 +76,9 @@ int main(int argc, char**argv){
 	else
 		return 0;
 	temp = syscall(253, event_id1);//destroy
-	if (temp != 0) {
+	temp1 = syscall(253, event_id2);
+	temp2 = syscall(253, event_id3);
+	if (temp != 0 || temp1 != 0 || temp2 != 0) {
 		perror("destroy error\n");
 		return 1;
 	}

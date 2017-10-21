@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 				w = syscall(251, event_id3);
 
 			if (w != 0) {
-				fprintf(stderr, "wait error: %d\n", w);
+				fprintf(stderr, "wait error: %s\n", strerror(errno));
 				return 1;
 			}
 			if (i%3 == 0)
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 	temp1 = syscall(253, event_id2);
 	temp2 = syscall(253, event_id3);
 	if (temp != 0 || temp1 != 0 || temp2 != 0) {
-		fprintf(stderr, "destroy error\n");
+		fprintf(stderr, "destroy error: %s\n", strerror(errno));
 		return 1;
 	}
 	for (i = 0; i < N; i++)

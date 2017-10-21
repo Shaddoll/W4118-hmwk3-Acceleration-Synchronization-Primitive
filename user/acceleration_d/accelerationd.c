@@ -261,7 +261,7 @@ static void enumerate_sensors(const struct sensors_module_t *sensors)
 			slist[s].version, slist[s].handle, slist[s].type,
 			slist[s].maxRange, slist[s].resolution);
 
-		if (slist[s].type == SENSOR_TYPE_ACCELEROMETER)
+		if (slist[s].type == SENSOR_TYPE_LINEAR_ACCELERATION)
 			effective_linaccel_sensor = slist[s].handle;
 	}
 }
